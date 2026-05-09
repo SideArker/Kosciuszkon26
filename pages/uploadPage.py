@@ -3,14 +3,15 @@ import streamlit as st
 st.set_page_config(page_title="GPS Guard", page_icon="🛡️", layout="wide")
 
 # --- Sidebar ---
+st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] { display: none; }
+    </style>
+""", unsafe_allow_html=True)
+
 
 # hide native sidebar
 with st.sidebar:
-    st.markdown("""
-        <style>
-            [data-testid="stSidebarNav"] { display: none; }
-        </style>
-    """, unsafe_allow_html=True)
     st.markdown(
         """
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
