@@ -43,8 +43,3 @@ Kolejnym etapem projektu jest stworzenie interaktywnego dashboardu w **Streamlit
 
 ## 📚 Bibliografia
 Dane wykorzystane w projekcie pochodzą z zestawu **TEXBAT** (Texas Spoofing Test Battery), uznawanego za światowy standard w testowaniu systemów anty-spoofingowych.
-\"\"\"
-
-with open('README.md', 'w', encoding='utf-8') as f:
-    f.write(readme_content)
-""")
