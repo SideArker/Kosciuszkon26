@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-05-10T10:26:52.344545",
+  "analyzed_file": "C:/Users/jakub/Documents/GitHub/Kosciuszkon26/data/texbat_fixed.csv",
+  "analyzed_file_basename": "texbat_fixed.csv",
+  "verdict_label": "SUSPICIOUS ACTIVITY DETECTED",
+  "spoof_pct": 14.41894547513573,
+  "total_rows": 30023,
+  "spoofed_rows": 4329,
+  "unique_prn": 12,
+  "train_mode_used": true,
+  "saved_model_path": "C:/Users/jakub/Documents/GitHub/Kosciuszkon26/data\\gps_spoof_detector.pkl",
+  "class_report": {
+    "0": {
+      "precision": 0.986154028999287,
+      "recall": 0.9669618925533154,
+      "f1-score": 0.9764636657840541,
+      "support": 17162.0
+    },
+    "1": {
+      "precision": 0.8225352112676056,
+      "recall": 0.9185599440754981,
+      "f1-score": 0.8678996036988111,
+      "support": 2861.0
+    },
+    "accuracy": 0.9600459471607651,
+    "macro avg": {
+      "precision": 0.9043446201334463,
+      "recall": 0.9427609183144068,
+      "f1-score": 0.9221816347414327,
+      "support": 20023.0
+    },
+    "weighted avg": {
+      "precision": 0.9627752427269832,
+      "recall": 0.9600459471607651,
+      "f1-score": 0.960951415790253,
+      "support": 20023.0
+    }
+  },
+  "feat_imp": [
+    {
+      "Cecha": "doppler_diff",
+      "Ważność": 1716
+    },
+    {
+      "Cecha": "c_n0_rolling_std",
+      "Ważność": 679
+    },
+    {
+      "Cecha": "c_n0_diff",
+      "Ważność": 605
+    }
+  ],
+  "mean_cn0_diff": 3.573442049790927,
+  "mean_doppler_diff": 214.37417884284946,
+  "mean_rolling_std": 1.1786532178519253,
+  "log_entries": [
+    [
+      "All",
+      "warning",
+      "4,329 anomalous records present with no clear onset boundary."
+    ]
+  ],
+  "id": "20260510_102652_texbat_fixed.csv"
+}
