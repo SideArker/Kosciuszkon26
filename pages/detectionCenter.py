@@ -78,7 +78,7 @@ else:
     mean_doppler_diff = data.loc[data["prediction"] == 1, "doppler_diff"].mean() if spoofed_rows else 0
     mean_rolling_std = data.loc[data["prediction"] == 1, "c_n0_rolling_std"].mean() if spoofed_rows else 0
     precomputed_log_entries = None
-    if spoof_pct > 20:
+    if spoof_pct > 13:
         verdict_label = "SPOOFING ATTACK DETECTED"
     elif spoof_pct > 5:
         verdict_label = "SUSPICIOUS ACTIVITY DETECTED"
