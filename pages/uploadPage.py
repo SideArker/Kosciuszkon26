@@ -4,6 +4,8 @@ import components.reports as reports
 import subprocess
 import sys
 import os
+import numpy as np
+import pandas as pd
 from datetime import datetime
 
 st.set_page_config(page_title="GPS Guard", page_icon="🛡️", layout="wide")
@@ -37,6 +39,35 @@ with st.sidebar:
     st.page_link("pages/uploadPage.py", label="Log Upload", icon=":material/upload_file:")
     st.page_link("pages/detectionCenter.py", label="Detection Center", icon=":material/manage_search:")
     st.page_link("pages/historyPage.py", label="Report History", icon=":material/history:")
+
+
+def _precompute_charts(data: "pd.DataFrame") -> None:
+    _MAX_POINTS = 250
+    _N_BINS = 40
+
+    # C/N0 over time
+    chart_df = (
+        data.groupby("TOW")
+        .agg(c_n0_diff=("c_n0_diff", "mean"), prediction=("prediction", lambda s: int(s.mode()[0])))
+        .reset_index()
+    )
+    if len(chart_df) > _MAX_POINTS:
+        step = len(chart_df) // _MAX_POINTS
+        chart_df = chart_df.iloc[::step].reset_index(drop=True)
+    chart_df["Status"] = chart_df["prediction"].map({0: "Normal", 1: "Spoofed"})
+    st.session_state.chart_df = chart_df
+
+    # Doppler histogram
+    bin_rows = []
+    for _label, _status in [(0, "Normal"), (1, "Spoofed")]:
+        vals = data.loc[data["prediction"] == _label, "doppler_diff"].dropna().values
+        if len(vals) == 0:
+            continue
+        counts, edges = np.histogram(vals, bins=_N_BINS)
+        for i, cnt in enumerate(counts):
+            if cnt > 0:
+                bin_rows.append({"bin_start": float(edges[i]), "bin_end": float(edges[i + 1]), "count": int(cnt), "Status": _status})
+    st.session_state.hist_df = pd.DataFrame(bin_rows)
 
 
 def _save_report(data, class_report, feat_imp, file_path, train_mode_used, saved_model_path=None):
@@ -211,20 +242,27 @@ if analyze:
     else:
         file_path = st.session_state.selected_file
         if train_model:
-            with st.spinner("Training model and analyzing…"):
+            with st.status("Analyzing file…", expanded=True) as status:
+                st.write(":material/description: Loading and parsing file…")
+                st.write(":material/model_training: Training model…")
                 class_report, feat_imp, saved_model_path = trainModel.analyze_data(
                     file_path=file_path,
                     split_row=int(split_row),
                     output_model=True,
                 )
-            data, _, _ = trainModel.run_model(file_path, saved_model_path)
+                st.write(":material/bar_chart: Running predictions on full dataset…")
+                data, _, _ = trainModel.run_model(file_path, saved_model_path)
+                st.write(":material/query_stats: Pre-computing charts…")
+                _precompute_charts(data)
+                st.write(":material/save: Saving report…")
+                _save_report(data, class_report, feat_imp, file_path, True, saved_model_path)
+                status.update(label="Analysis complete!", state="complete", expanded=False)
             st.session_state.analysis_data = data
             st.session_state.class_report = class_report
             st.session_state.feat_imp = feat_imp
             st.session_state.analyzed_file = file_path
             st.session_state.saved_model_path = saved_model_path
             st.session_state.train_mode_used = True
-            _save_report(data, class_report, feat_imp, file_path, True, saved_model_path)
             st.session_state.loaded_from_history = False
             st.switch_page("pages/detectionCenter.py")
         else:
@@ -234,14 +272,20 @@ if analyze:
             elif not os.path.exists(model_path):
                 st.error(f"Model file not found: `{model_path}`")
             else:
-                with st.spinner("Running model…"):
+                with st.status("Analyzing file…", expanded=True) as status:
+                    st.write(":material/description: Loading and parsing file…")
+                    st.write(":material/bar_chart: Running predictions…")
                     data, class_report, feat_imp = trainModel.run_model(file_path, model_path)
+                    st.write(":material/query_stats: Pre-computing charts…")
+                    _precompute_charts(data)
+                    st.write(":material/save: Saving report…")
+                    _save_report(data, class_report, feat_imp, file_path, False)
+                    status.update(label="Analysis complete!", state="complete", expanded=False)
                 st.session_state.analysis_data = data
                 st.session_state.class_report = class_report
                 st.session_state.feat_imp = feat_imp
                 st.session_state.analyzed_file = file_path
                 st.session_state.train_mode_used = False
-                _save_report(data, class_report, feat_imp, file_path, False)
                 st.session_state.loaded_from_history = False
                 st.switch_page("pages/detectionCenter.py")
                 

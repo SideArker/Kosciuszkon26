@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import altair as alt
 
 st.set_page_config(page_title="GPS Guard", page_icon="🛡️", layout="wide")
@@ -170,12 +171,19 @@ with col_chart:
         if data is None:
             st.info("Chart not available for historical reports — raw measurement data was not persisted.", icon=":material/info:")
         else:
-            chart_df = (
-                data.groupby("TOW")
-                .agg(c_n0_diff=("c_n0_diff", "mean"), prediction=("prediction", lambda s: int(s.mode()[0])))
-                .reset_index()
-            )
-            chart_df["Status"] = chart_df["prediction"].map({0: "Normal", 1: "Spoofed"})
+            chart_df = st.session_state.get("chart_df")
+            if chart_df is None:
+                # Fallback: compute on the fly (e.g. older session)
+                _MAX_POINTS = 1000
+                chart_df = (
+                    data.groupby("TOW")
+                    .agg(c_n0_diff=("c_n0_diff", "mean"), prediction=("prediction", lambda s: int(s.mode()[0])))
+                    .reset_index()
+                )
+                if len(chart_df) > _MAX_POINTS:
+                    step = len(chart_df) // _MAX_POINTS
+                    chart_df = chart_df.iloc[::step].reset_index(drop=True)
+                chart_df["Status"] = chart_df["prediction"].map({0: "Normal", 1: "Spoofed"})
             bar = (
                 alt.Chart(chart_df)
                 .mark_bar()
@@ -211,19 +219,33 @@ with col_feat:
             st.altair_chart(fi_chart, width='stretch')
         elif data is not None:
             st.markdown(":material/insights: **Doppler Differential Distribution**")
-            hist_data = data[["doppler_diff", "prediction"]].copy()
-            hist_data["Status"] = hist_data["prediction"].map({0: "Normal", 1: "Spoofed"})
+            _hist_df = st.session_state.get("hist_df")
+            if _hist_df is None:
+                # Fallback: compute on the fly
+                _N_BINS = 40
+                _bin_rows = []
+                for _label, _status in [(0, "Normal"), (1, "Spoofed")]:
+                    _vals = data.loc[data["prediction"] == _label, "doppler_diff"].dropna().values
+                    if len(_vals) == 0:
+                        continue
+                    _counts, _edges = np.histogram(_vals, bins=_N_BINS)
+                    for _i, _cnt in enumerate(_counts):
+                        if _cnt > 0:
+                            _bin_rows.append({"bin_start": float(_edges[_i]), "bin_end": float(_edges[_i + 1]), "count": int(_cnt), "Status": _status})
+                _hist_df = pd.DataFrame(_bin_rows)
             hist = (
-                alt.Chart(hist_data)
+                alt.Chart(_hist_df)
                 .mark_bar(opacity=0.75, binSpacing=0)
                 .encode(
-                    x=alt.X("doppler_diff:Q", bin=alt.Bin(maxbins=40), title="Doppler Diff (Hz)"),
-                    y=alt.Y("count()", title="Count"),
+                    x=alt.X("bin_start:Q", title="Doppler Diff (Hz)"),
+                    x2=alt.X2("bin_end:Q"),
+                    y=alt.Y("count:Q", title="Count"),
                     color=alt.Color(
                         "Status:N",
                         scale=alt.Scale(domain=["Normal", "Spoofed"], range=["#00c9b1", "#e07b00"]),
                         legend=alt.Legend(orient="bottom"),
                     ),
+                    tooltip=["Status", alt.Tooltip("bin_start:Q", format=".2f"), "count:Q"],
                 )
                 .properties(height=240)
             )
