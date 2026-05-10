@@ -69,8 +69,13 @@ def analyze_data(file_path: str, split_row: int, output_model: bool = True):
 
     print(class_report)
     print("\n--- ANALIZA WAŻNOŚCI CECH ---")
+    _feature_labels = [
+        'C/N0 Differential',
+        'Doppler Differential',
+        'C/N0 Rolling Std Dev',
+    ]
     feat_imp = pd.DataFrame({
-        'Cecha': features, 
+        'Cecha': _feature_labels,
         'Ważność': clf.feature_importances_
     }).sort_values(by='Ważność', ascending=False)
     print(feat_imp.to_string(index=False))
@@ -104,8 +109,13 @@ def run_model(file_path: str, model_path: str):
         print("\nRaport skuteczności:")
         print(classification_report(y_true, y_pred))
 
+    _feature_labels = [
+        'C/N0 Differential',
+        'Doppler Differential',
+        'C/N0 Rolling Std Dev',
+    ]
     feat_imp = pd.DataFrame({
-        'Cecha': features,
+        'Cecha': _feature_labels,
         'Ważność': clf.feature_importances_,
     }).sort_values(by='Ważność', ascending=False)
 

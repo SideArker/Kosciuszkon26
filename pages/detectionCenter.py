@@ -163,7 +163,7 @@ with col_chart:
     with st.container(border=True):
         hdr_c, hdr_badge = st.columns([3, 1])
         with hdr_c:
-            st.markdown(":material/show_chart: **C/N0 Differential Over Time**")
+            st.markdown(":material/show_chart: **Signal Quality (C/N0) Anomaly Over Time**")
         with hdr_badge:
             badge_text = ":red[Anomalous]" if spoof_pct > 20 else (":orange[Suspicious]" if spoof_pct > 5 else ":green[Normal]")
             st.markdown(badge_text)
