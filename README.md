@@ -96,5 +96,8 @@ Training uses a time-series split: the model is trained on the first *N* rows an
 
 ## Data
 
-Data used in this project comes from the **TEXBAT** (Texas Spoofing Test Battery) dataset, the internationally recognised standard for testing anti-spoofing systems.
+Data used in this project were supposed to come from the **TEXBAT** (Texas Spoofing Test Battery) dataset, the internationally recognised standard for testing anti-spoofing systems, but data was too unbalanced, so we ended up with **Tuni2025 Datasets for GNSS - GPS Spoofing** and trained our model on:
+- C-7 GPS Static No Multipath True Position – **Clear-sky** (no spoofers)    - Version-v13
+- SS-18 GPS Static No Multipath True Position – **2 Spoofers**               - Version-v3
+
 
