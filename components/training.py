@@ -9,10 +9,10 @@ import os
 
 # -----------------
 
-def create_model(model_name: str, file_path: str, clf: LGBMClassifier, features: list):
-    model_filename = f'{model_name}.pkl'
+def create_model(model_name: str, save_dir: str, clf: LGBMClassifier, features: list) -> str:
+    model_filename = os.path.join(save_dir, f'{model_name}.pkl') if save_dir else f'{model_name}.pkl'
 
-# Tworzymy słownik z modelem i metadanymi
+    # Tworzymy słownik z modelem i metadanymi
     model_data = {
         'model': clf,
         'features': features,
@@ -23,6 +23,7 @@ def create_model(model_name: str, file_path: str, clf: LGBMClassifier, features:
     joblib.dump(model_data, model_filename)
 
     print(f"\nModel został pomyślnie zapisany w pliku: {model_filename}")
+    return model_filename
 
 
 
@@ -75,9 +76,40 @@ def analyze_data(file_path: str, split_row: int, output_model: bool = True):
     print(feat_imp.to_string(index=False))
     
     
+    saved_model_path = None
     if output_model:
-        model_path = os.path.dirname(file_path)
-        create_model('lgbm_gps_spoof_detector', model_path, clf, features)
-    return class_report, feat_imp
+        save_dir = os.path.dirname(file_path)
+        saved_model_path = create_model('gps_spoof_detector', save_dir, clf, features)
+    return class_report, feat_imp, saved_model_path
+
+
+def run_model(file_path: str, model_path: str):
+    print("1. Ładowanie modelu...")
+    model_data = joblib.load(model_path)
+    clf: LGBMClassifier = model_data['model']
+    features: list = model_data['features']
+
+    print("2. Przygotowywanie danych...")
+    full_data = parse_and_prepare(file_path)
+    full_data = full_data.sort_values(by=['TOW', 'TOW_Frac']).reset_index(drop=True)
+
+    X = full_data[features]
+    full_data['prediction'] = clf.predict(X)
+
+    class_report = None
+    if 'Label' in full_data.columns:
+        y_true = full_data['Label']
+        y_pred = full_data['prediction']
+        class_report = classification_report(y_true, y_pred, output_dict=True)
+        print("\nRaport skuteczności:")
+        print(classification_report(y_true, y_pred))
+
+    feat_imp = pd.DataFrame({
+        'Cecha': features,
+        'Ważność': clf.feature_importances_,
+    }).sort_values(by='Ważność', ascending=False)
+
+    print(f"\nGotowe. Przewidziano {len(full_data)} wierszy.")
+    return full_data, class_report, feat_imp
 
 
